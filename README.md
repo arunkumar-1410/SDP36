@@ -9,6 +9,7 @@ A comprehensive web application providing access to health and wellness resource
 - **Join Wellness Programs**: Enroll in expert-led fitness classes, mindfulness workshops, and wellness programs
 - **Find Support Services**: Access 24/7 mental health support, counseling services, and crisis hotlines
 - **Track Progress**: Monitor your wellness program enrollments and achievements
+- **User Registration**: Sign up for a personal account to access all features
 
 ### For Administrators
 - **Manage Resources**: Create, edit, and delete health and wellness articles
@@ -18,12 +19,14 @@ A comprehensive web application providing access to health and wellness resource
 
 ## Tech Stack
 
-- **Frontend Framework**: React 19 with TypeScript
-- **Styling**: Tailwind CSS
+- **Frontend Framework**: React 19
+- **Language**: JavaScript (ES Modules)
+- **Styling**: Tailwind CSS 4
 - **Routing**: React Router v7
 - **Icons**: Lucide React
 - **HTTP Client**: Axios
-- **Build Tool**: Vite
+- **Build Tool**: Vite 7
+- **Linting**: ESLint 9 with React plugin
 - **Package Manager**: npm
 
 ## Project Structure
@@ -31,35 +34,36 @@ A comprehensive web application providing access to health and wellness resource
 ```
 src/
 ├── components/          # Reusable UI components
-│   ├── Navbar.tsx
-│   ├── ResourceCard.tsx
-│   ├── ProgramCard.tsx
-│   ├── ServiceCard.tsx
-│   └── ProtectedRoute.tsx
+│   ├── Navbar.jsx
+│   ├── ResourceCard.jsx
+│   ├── ProgramCard.jsx
+│   ├── ServiceCard.jsx
+│   └── ProtectedRoute.jsx
 ├── context/            # Global state management
-│   ├── AuthContext.tsx
-│   └── HealthContext.tsx
+│   ├── AuthContext.jsx
+│   └── HealthContext.jsx
 ├── pages/              # Page components
-│   ├── LoginPage.tsx
-│   ├── HomePage.tsx
-│   ├── ResourcesPage.tsx
-│   ├── ProgramsPage.tsx
-│   ├── SupportPage.tsx
-│   ├── AdminDashboard.tsx
-│   ├── ManageResources.tsx
-│   └── ManagePrograms.tsx
-├── types/              # TypeScript type definitions
+│   ├── LoginPage.jsx
+│   ├── SignupPage.jsx
+│   ├── HomePage.jsx
+│   ├── ResourcesPage.jsx
+│   ├── ProgramsPage.jsx
+│   ├── SupportPage.jsx
+│   ├── AdminDashboard.jsx
+│   ├── ManageResources.jsx
+│   └── ManagePrograms.jsx
 ├── api/                # API client configuration
-├── App.tsx             # Main app component
-├── main.tsx            # React DOM render
-└── index.css           # Global styles
+│   └── client.js
+├── App.jsx             # Main app component with routing
+├── main.jsx            # React DOM render entry point
+└── index.css           # Global styles (Tailwind)
 ```
 
 ## Getting Started
 
 ### Prerequisites
-- Node.js 16+ 
-- npm 8+
+- Node.js 18+
+- npm 9+
 
 ### Installation
 
@@ -92,8 +96,8 @@ The application includes demo accounts for testing:
 ## Features in Detail
 
 ### Authentication
-- User login with role-based access control
-- Two roles: Admin and Student
+- User login and registration (signup)
+- Role-based access control (Admin and Student)
 - Protected routes based on user role
 - Persistent authentication using localStorage
 
@@ -158,56 +162,3 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ## Support
 
 For issues or questions, please contact the development team at support@healthwell.edu
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
-
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
