@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
-import { Mail, Lock, AlertCircle, Eye, EyeOff } from 'lucide-react';
+import { Mail, Lock, AlertCircle, Eye, EyeOff, ArrowRight } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 export const LoginPage = () => {
   const [email, setEmail] = useState('');
@@ -19,74 +20,84 @@ export const LoginPage = () => {
 
     try {
       if (!email || !password) {
-        setError('Please fill in both fields to continue.');
+        setError('Please fill in both fields.');
+        setLoading(false);
         return;
       }
 
       await login(email, password);
-      navigate('/');
-    } catch (_err) {
-      setError('Hmm, that didn\'t work. Double-check your credentials and try again.');
+      navigate('/dashboard');
+    } catch (err) {
+      setError(err.response?.data?.message || 'Invalid credentials.');
     } finally {
       setLoading(false);
     }
   };
 
-  const demoLogins = [
-    { email: 'admin@university.edu', role: 'Admin', hint: 'Full dashboard access' },
-    { email: 'student@university.edu', role: 'Student', hint: 'Browse & enroll in programs' },
-  ];
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-5">
-      <div className="w-full max-w-md">
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-7 sm:p-8">
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Background Orbs */}
+      <div className="absolute top-[-5%] right-[-5%] w-[30%] h-[30%] bg-blue-100 rounded-full blur-3xl opacity-40"></div>
+      <div className="absolute bottom-[-5%] left-[-5%] w-[25%] h-[25%] bg-purple-100 rounded-full blur-3xl opacity-40"></div>
+
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.98 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="w-full max-w-[420px] relative z-10"
+      >
+        <div className="bg-white rounded-3xl shadow-xl border border-slate-100 p-6 sm:p-8">
           <div className="flex justify-center mb-6">
-            <div className="w-14 h-14 bg-gradient-to-br from-sky-500 to-violet-500 rounded-xl flex items-center justify-center shadow-md">
-              <span className="text-white font-bold text-xl">HW</span>
+            <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-100">
+              <span className="text-white font-black text-xl">HW</span>
             </div>
           </div>
 
-          <h1 className="text-2xl font-bold text-center text-gray-800 mb-1">Welcome back</h1>
-          <p className="text-center text-gray-400 text-sm mb-7">Log in to your HealthWell account</p>
+          <div className="text-center mb-6">
+            <h1 className="text-2xl font-black text-slate-900 mb-1">Welcome Back</h1>
+            <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Login to portal</p>
+          </div>
 
           {error && (
-            <div className="mb-5 p-3.5 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2.5">
-              <AlertCircle className="text-red-400 flex-shrink-0 mt-0.5" size={18} />
-              <p className="text-red-600 text-sm">{error}</p>
-            </div>
+            <motion.div 
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-6 p-3 bg-rose-50 border border-rose-100 rounded-xl flex items-start gap-2.5"
+            >
+              <AlertCircle className="text-rose-500 shrink-0 mt-0.5" size={16} />
+              <p className="text-rose-600 text-xs font-bold leading-tight">{error}</p>
+            </motion.div>
           )}
 
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4 mb-5">
-            <div>
-              <label className="block text-sm font-medium text-gray-600 mb-1.5">Email</label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-2.5 text-gray-300" size={18} />
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Email</label>
+              <div className="relative group">
+                <Mail className="absolute left-3.5 top-3 text-slate-300 group-focus-within:text-blue-500 transition-colors" size={18} />
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-transparent bg-gray-50 text-sm"
-                  placeholder="you@university.edu"
+                  className="w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 transition-all text-sm font-medium"
+                  placeholder="name@university.edu"
                 />
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-600 mb-1.5">Password</label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-2.5 text-gray-300" size={18} />
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Password</label>
+              <div className="relative group">
+                <Lock className="absolute left-3.5 top-3 text-slate-300 group-focus-within:text-blue-500 transition-colors" size={18} />
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-10 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-transparent bg-gray-50 text-sm"
-                  placeholder="Your password"
+                  className="w-full pl-11 pr-11 py-2.5 bg-slate-50 border border-slate-100 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 transition-all text-sm font-medium"
+                  placeholder="••••••••"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-2.5 text-gray-300 hover:text-gray-500"
+                  className="absolute right-3.5 top-3 text-slate-300 hover:text-slate-500 transition-colors"
                 >
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
@@ -96,42 +107,24 @@ export const LoginPage = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-gradient-to-r from-sky-500 to-violet-500 text-white font-semibold py-2.5 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 mt-1 text-sm"
+              className="w-full py-3 bg-slate-900 text-white text-sm font-bold rounded-xl shadow-lg hover:bg-blue-600 transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
             >
-              {loading ? 'Logging in...' : 'Log In'}
+              {loading ? (
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+              ) : (
+                <>Log In <ArrowRight size={18} /></>
+              )}
             </button>
           </form>
 
-          <p className="text-center text-sm text-gray-400 mb-6">
-            Don't have an account?{' '}
-            <Link to="/signup" className="text-sky-500 font-medium hover:underline">
-              Sign up
-            </Link>
-          </p>
-
-          <div className="border-t border-gray-100 pt-5">
-            <p className="text-xs text-gray-400 mb-3 text-center uppercase tracking-wide">Try a demo account</p>
-            <div className="flex flex-col gap-2">
-              {demoLogins.map((demo) => (
-                <button
-                  key={demo.email}
-                  onClick={() => {
-                    setEmail(demo.email);
-                    setPassword('demo');
-                  }}
-                  className="w-full text-left p-3 border border-gray-100 rounded-lg hover:bg-gray-50 hover:border-sky-200 transition-colors text-sm group"
-                >
-                  <div className="flex justify-between items-center">
-                    <span className="font-medium text-gray-700">{demo.role}</span>
-                    <span className="text-xs text-gray-300 group-hover:text-sky-400">{demo.hint}</span>
-                  </div>
-                  <p className="text-gray-400 text-xs mt-0.5">{demo.email}</p>
-                </button>
-              ))}
-            </div>
+          <div className="mt-6 text-center space-y-3">
+            <Link to="/forgot-password" size="sm" className="text-[11px] font-bold text-slate-400 hover:text-blue-600 transition-colors uppercase tracking-widest">Forgot Password?</Link>
+            <p className="text-slate-400 text-xs font-bold pt-2 border-t border-slate-50">
+              New here? <Link to="/signup" className="text-blue-600 hover:underline">Create Account</Link>
+            </p>
           </div>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 };

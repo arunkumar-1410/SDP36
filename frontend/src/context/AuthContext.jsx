@@ -1,54 +1,52 @@
 import { createContext, useContext, useState } from 'react';
+import apiClient from '../api/client';
 
 const AuthContext = createContext(undefined);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
-    const stored = localStorage.getItem('user');
-    return stored ? JSON.parse(stored) : null;
+    const role = localStorage.getItem('role');
+    const name = localStorage.getItem('userName');
+    return role ? { role, name } : null;
   });
 
-  const login = async (email, _password) => {
-    // Simulated login - in production, this would call your backend
-    const mockUser = {
-      id: '1',
-      name: email.split('@')[0],
-      email,
-      role: email.includes('admin') ? 'admin' : 'student',
-      avatar: `https://ui-avatars.com/api/?name=${email.split('@')[0]}`,
-    };
-
-    setUser(mockUser);
-    localStorage.setItem('user', JSON.stringify(mockUser));
+  const login = async (email, password) => {
+    try {
+      const response = await apiClient.post('/api/auth/login', { email, password });
+      const { token, role, name } = response.data;
+      
+      localStorage.setItem('token', token);
+      localStorage.setItem('role', role);
+      localStorage.setItem('userName', name);
+      setUser({ role, name });
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
   };
 
-  const signup = async (name, email, _password) => {
-    // Simulated registration - in production, this would call your backend
-    const newUser = {
-      id: Date.now().toString(),
-      name,
-      email,
-      role: 'student',
-      avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}`,
-    };
-
-    setUser(newUser);
-    localStorage.setItem('user', JSON.stringify(newUser));
+  const signup = async (name, email, password) => {
+    try {
+      await apiClient.post('/api/auth/register', { name, email, password, role: 'student' });
+    } catch (error) {
+      throw error;
+    }
   };
 
   const logout = () => {
     setUser(null);
-    localStorage.removeItem('user');
+    localStorage.removeItem('role');
+    localStorage.removeItem('token');
+    localStorage.removeItem('userName');
   };
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated: !!user, login, signup, logout, setUser }}>
+    <AuthContext.Provider value={{ user, isAuthenticated: !!user, login, signup, logout }}>
       {children}
     </AuthContext.Provider>
   );
 };
 
-// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {

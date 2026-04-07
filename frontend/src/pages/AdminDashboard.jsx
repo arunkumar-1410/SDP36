@@ -1,151 +1,212 @@
-import { useHealth } from '@/context/HealthContext';
-import { BarChart3, TrendingUp, Users, FileText } from 'lucide-react';
-
-const ChartBar = ({ label, value, maxValue }) => {
-  const percentage = (value / maxValue) * 100;
-  return (
-    <div className="mb-4">
-      <div className="flex justify-between text-sm mb-1">
-        <span className="font-semibold text-gray-700">{label}</span>
-        <span className="text-gray-600">{value}</span>
-      </div>
-      <div className="w-full bg-gray-200 rounded-full h-2">
-        <div
-          className="bg-primary-500 h-2 rounded-full transition-all duration-500"
-          style={{ width: `${percentage}%` }}
-        />
-      </div>
-    </div>
-  );
-};
+import { useEffect, useState } from 'react';
+import apiClient from '../api/client';
+import { Users, Layout, FileText, TrendingUp, Bookmark, Calendar, X, Eye } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export const AdminDashboard = () => {
-  const { resources, programs, getMetrics } = useHealth();
+    const [stats, setStats] = useState(null);
+    const [users, setUsers] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [selectedUser, setSelectedUser] = useState(null);
 
-  const allMetrics = getMetrics();
-  
-  // Calculate statistics
-  const totalResources = resources.length;
-  const totalPrograms = programs.length;
-  const totalViews = allMetrics.reduce((sum, m) => sum + m.views, 0);
-  const totalParticipants = programs.reduce((sum, p) => sum + p.participants, 0);
+    useEffect(() => {
+        fetchAdminData();
+    }, []);
 
-  // Get top resources
-  const topResources = allMetrics
-    .sort((a, b) => b.views - a.views)
-    .slice(0, 5);
+    const fetchAdminData = async () => {
+        try {
+            const [sRes, uRes] = await Promise.all([
+                apiClient.get('/api/admin/stats'),
+                apiClient.get('/api/admin/users')
+            ]);
+            setStats(sRes.data);
+            setUsers(uRes.data);
+        } catch (err) {
+            console.error('Admin data fetch error', err);
+        } finally {
+            setLoading(false);
+        }
+    };
 
-  // Category breakdown
-  const categoryStats = {
-    'mental-health': resources.filter(r => r.category === 'mental-health').length,
-    'fitness': resources.filter(r => r.category === 'fitness').length,
-    'nutrition': resources.filter(r => r.category === 'nutrition').length,
-  };
-
-  const stats = [
-    { label: 'Total Resources', value: totalResources, icon: FileText, color: 'bg-blue-500' },
-    { label: 'Active Programs', value: totalPrograms, icon: Users, color: 'bg-green-500' },
-    { label: 'Total Views', value: totalViews, icon: TrendingUp, color: 'bg-purple-500' },
-    { label: 'Program Participants', value: totalParticipants, icon: BarChart3, color: 'bg-orange-500' },
-  ];
-
-  return (
-    <div className="min-h-screen bg-gray-50 py-14">
-      <div className="max-w-7xl mx-auto px-6">
-        {/* Header */}
-        <div className="mb-10">
-          <h1 className="text-3xl font-bold text-gray-800 mb-1">Dashboard</h1>
-          <p className="text-gray-400 text-sm">Overview of platform activity and usage</p>
+    if (loading) return (
+        <div className="flex items-center justify-center min-h-screen">
+            <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
         </div>
+    );
 
-        {/* Stats Cards */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-          {stats.map((stat, index) => (
-            <div key={index} className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-gray-500 font-semibold text-sm">{stat.label}</h3>
-                <div className={`${stat.color} p-2.5 rounded-xl`}>
-                  <stat.icon size={18} className="text-white" />
+    return (
+        <div className="min-h-screen bg-slate-50 pt-32 pb-20">
+            <div className="max-w-7xl mx-auto px-6">
+                <div className="mb-12">
+                    <h1 className="text-4xl font-black text-slate-900 mb-2 tracking-tight">Admin Control Center</h1>
+                    <p className="text-slate-500 font-medium">Platform-wide statistics and user management</p>
                 </div>
-              </div>
-              <p className="text-3xl font-bold text-gray-800">{stat.value}</p>
+
+                {/* Stats Section */}
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+                    <StatCard icon={Users} label="Total Users" value={stats?.totalUsers} color="bg-blue-500" />
+                    <StatCard icon={Layout} label="Total Programs" value={stats?.totalPrograms} color="bg-indigo-500" />
+                    <StatCard icon={FileText} label="Total Resources" value={stats?.totalResources} color="bg-emerald-500" />
+                </div>
+
+                <div className="grid lg:grid-cols-2 gap-8 mb-12">
+                     <BestPerformer 
+                        label="Most Enrolled Program" 
+                        title={stats?.mostEnrolledProgram?.title} 
+                        count={stats?.mostEnrolledProgram?.enrollmentCount} 
+                        suffix="Enrollments"
+                        icon={TrendingUp}
+                        color="text-indigo-600"
+                        bg="bg-indigo-50"
+                     />
+                     <BestPerformer 
+                        label="Most Accessed Resource" 
+                        title={stats?.mostAccessedResource?.title} 
+                        count={stats?.mostAccessedResource?.accessCount} 
+                        suffix="Views"
+                        icon={Bookmark}
+                        color="text-emerald-600"
+                        bg="bg-emerald-50"
+                     />
+                </div>
+
+                {/* Users Table */}
+                <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
+                    <div className="p-8 border-b border-slate-50 flex justify-between items-center">
+                        <h2 className="text-xl font-black text-slate-900">User Management</h2>
+                        <span className="px-4 py-1.5 bg-slate-100 text-slate-500 rounded-full text-xs font-black uppercase tracking-widest">
+                            {users?.length} Registered
+                        </span>
+                    </div>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left">
+                            <thead>
+                                <tr className="bg-slate-50/50">
+                                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Name</th>
+                                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Email</th>
+                                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Role</th>
+                                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 text-center">Programs</th>
+                                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 text-center">Resources</th>
+                                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-50">
+                                {users.map(u => (
+                                    <tr key={u.id} className="hover:bg-slate-50/30 transition-colors">
+                                        <td className="px-8 py-5 font-bold text-slate-900">{u.name}</td>
+                                        <td className="px-8 py-5 text-sm text-slate-500">{u.email}</td>
+                                        <td className="px-8 py-5">
+                                            <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest ${
+                                                u.role === 'admin' ? 'bg-amber-50 text-amber-600 border border-amber-100' : 'bg-blue-50 text-blue-600 border border-blue-100'
+                                            }`}>
+                                                {u.role}
+                                            </span>
+                                        </td>
+                                        <td className="px-8 py-5 text-center font-bold text-slate-700">{u.totalEnrolled}</td>
+                                        <td className="px-8 py-5 text-center font-bold text-slate-700">{u.totalResourcesAccessed}</td>
+                                        <td className="px-8 py-5 text-right">
+                                            <button 
+                                                onClick={() => setSelectedUser(u)}
+                                                className="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-indigo-600 transition-all shadow-lg shadow-slate-100 active:scale-95"
+                                            >
+                                                <Eye size={14} /> View History
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
-          ))}
-        </div>
 
-        {/* Main Content Grid */}
-        <div className="grid lg:grid-cols-3 gap-8">
-          {/* Resources by Category */}
-          <div className="lg:col-span-1 bg-white rounded-xl border border-gray-100 shadow-sm p-6">
-            <h2 className="text-lg font-bold text-gray-900 mb-6">Resources by Category</h2>
-            <div className="flex flex-col gap-4">
-              <ChartBar label="Mental Health" value={categoryStats['mental-health']} maxValue={5} />
-              <ChartBar label="Fitness" value={categoryStats['fitness']} maxValue={5} />
-              <ChartBar label="Nutrition" value={categoryStats['nutrition']} maxValue={5} />
-            </div>
-          </div>
-
-          {/* Top Resources */}
-          <div className="lg:col-span-2 bg-white rounded-xl border border-gray-100 shadow-sm p-6">
-            <h2 className="text-lg font-bold text-gray-900 mb-6">Top Resources</h2>
-            {topResources.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="text-left py-3 px-4 font-semibold text-gray-700">Resource</th>
-                      <th className="text-left py-3 px-4 font-semibold text-gray-700">Category</th>
-                      <th className="text-right py-3 px-4 font-semibold text-gray-700">Views</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {topResources.map((resource, index) => (
-                      <tr key={index} className="border-b hover:bg-gray-50">
-                        <td className="py-3 px-4 text-gray-800">{resource.resourceTitle}</td>
-                        <td className="py-3 px-4">
-                          <span className={`text-xs font-semibold px-2 py-1 rounded ${
-                            resource.category === 'mental-health' ? 'bg-purple-100 text-purple-800' :
-                            resource.category === 'fitness' ? 'bg-green-100 text-green-800' :
-                            'bg-orange-100 text-orange-800'
-                          }`}>
-                            {resource.category.replace('-', ' ')}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4 text-right font-semibold text-gray-800">{resource.views}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <p className="text-gray-600">No metrics data available yet.</p>
-            )}
-          </div>
+            {/* History Modal */}
+            <AnimatePresence>
+                {selectedUser && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-sm">
+                        <motion.div 
+                            initial={{ opacity: 0, scale: 0.95 }} 
+                            animate={{ opacity: 1, scale: 1 }} 
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            className="bg-white w-full max-w-4xl max-h-[85vh] rounded-[2.5rem] shadow-2xl flex flex-col overflow-hidden"
+                        >
+                            <div className="p-8 border-b border-slate-50 flex justify-between items-center">
+                                <div>
+                                    <h2 className="text-2xl font-black text-slate-900">{selectedUser.name}'s Journey</h2>
+                                    <p className="text-sm text-slate-400 font-medium">{selectedUser.email}</p>
+                                </div>
+                                <button onClick={() => setSelectedUser(null)} className="p-3 bg-slate-50 text-slate-400 rounded-2xl hover:bg-rose-50 hover:text-rose-500 transition-all">
+                                    <X size={24} />
+                                </button>
+                            </div>
+                            
+                            <div className="flex-1 overflow-y-auto p-8 grid md:grid-cols-2 gap-8">
+                                <div>
+                                    <h4 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-6 flex items-center gap-2">
+                                        <Calendar size={16} className="text-indigo-500" /> Enrolled Programs
+                                    </h4>
+                                    <div className="space-y-3">
+                                        {selectedUser.enrolledPrograms.length > 0 ? (
+                                            selectedUser.enrolledPrograms.map((p, i) => (
+                                                <div key={i} className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                                                    <p className="font-bold text-slate-900 text-sm">{p.title}</p>
+                                                    <p className="text-[10px] text-slate-400 font-black mt-1 uppercase">Enrolled: {new Date(p.enrolledAt).toLocaleDateString()}</p>
+                                                </div>
+                                            ))
+                                        ) : (
+                                            <p className="text-sm text-slate-400 italic">No programs enrolled.</p>
+                                        )}
+                                    </div>
+                                </div>
+                                <div>
+                                    <h4 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-6 flex items-center gap-2">
+                                        <Bookmark size={16} className="text-emerald-500" /> Resource Access
+                                    </h4>
+                                    <div className="space-y-3">
+                                        {selectedUser.resourceHistory.length > 0 ? (
+                                            selectedUser.resourceHistory.map((h, i) => (
+                                                <div key={i} className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                                                    <p className="font-bold text-slate-900 text-sm">{h.title}</p>
+                                                    <p className="text-[10px] text-slate-400 font-black mt-1 uppercase">Accessed: {new Date(h.accessedAt).toLocaleDateString()}</p>
+                                                </div>
+                                            ))
+                                        ) : (
+                                            <p className="text-sm text-slate-400 italic">No resource history.</p>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div>
-
-        {/* Programs Overview */}
-        <div className="mt-8 bg-white rounded-xl border border-gray-100 shadow-sm p-6">
-          <h2 className="text-lg font-bold text-gray-900 mb-6">Programs Overview</h2>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {programs.slice(0, 3).map((program) => (
-              <div key={program.id} className="p-5 border border-gray-100 rounded-xl bg-gray-50">
-                <h3 className="font-bold text-gray-900 mb-2">{program.title}</h3>
-                <div className="flex flex-col gap-1.5 text-sm text-gray-500">
-                  <p>Participants: <span className="font-semibold text-gray-800">{program.participants}/{program.maxParticipants}</span></p>
-                  <p>Instructor: <span className="font-semibold text-gray-800">{program.instructor}</span></p>
-                  <p>Schedule: <span className="font-semibold text-gray-800">{program.schedule}</span></p>
-                </div>
-                <div className="mt-3 bg-gray-100 rounded h-2">
-                  <div
-                    className="bg-primary-500 h-2 rounded"
-                    style={{ width: `${(program.participants / program.maxParticipants) * 100}%` }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+    );
 };
+
+const StatCard = ({ icon: Icon, label, value, color }) => (
+    <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm flex items-center gap-6">
+        <div className={`${color} p-4 rounded-2xl text-white shadow-lg`}>
+            <Icon size={24} />
+        </div>
+        <div>
+            <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">{label}</p>
+            <p className="text-3xl font-black text-slate-900">{value}</p>
+        </div>
+    </div>
+);
+
+const BestPerformer = ({ label, title, count, suffix, icon: Icon, color, bg }) => (
+    <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
+        <div className="flex justify-between items-start mb-6">
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">{label}</span>
+            <div className={`p-2 ${bg} ${color} rounded-xl`}>
+                <Icon size={20} />
+            </div>
+        </div>
+        <h3 className="text-xl font-black text-slate-900 mb-2 truncate">{title || 'N/A'}</h3>
+        <p className="text-slate-500 font-bold text-sm">
+            <span className={color}>{count || 0}</span> {suffix}
+        </p>
+    </div>
+);
