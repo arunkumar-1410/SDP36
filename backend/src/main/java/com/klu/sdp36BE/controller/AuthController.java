@@ -58,10 +58,14 @@ public class AuthController {
             User user = service.login(email, password);
             String token = jwtUtil.generateToken(user.getEmail());
             
+            String roleStr = user.getRole(); // Already "ADMIN" or "STUDENT" string
+            System.out.println("LOGIN RESPONSE ROLE: " + roleStr);
+
             Map<String, Object> response = new HashMap<>();
             response.put("token", token);
-            response.put("role", user.getRole());
+            response.put("role", roleStr);
             response.put("name", user.getName());
+            response.put("email", user.getEmail());
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             return ResponseEntity.status(401).body(Map.of("message", "Invalid credentials"));

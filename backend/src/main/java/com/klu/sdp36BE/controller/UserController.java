@@ -8,7 +8,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -58,7 +57,7 @@ public class UserController {
             Map<String, Object> m = new HashMap<>();
             m.put("id", e.getProgram().getId());
             m.put("title", e.getProgram().getTitle());
-            m.put("instructor", e.getProgram().getInstructor());
+            m.put("instructor", e.getProgram().getInstructorName());
             m.put("duration", e.getProgram().getDuration());
             m.put("enrolledAt", e.getEnrolledAt());
             return m;

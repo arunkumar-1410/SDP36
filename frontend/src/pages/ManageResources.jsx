@@ -1,227 +1,192 @@
-import { useState } from 'react';
-import { useHealth } from '@/context/HealthContext';
-import { Plus, Edit2, Trash2, X } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import apiClient from '../api/client';
+import { Plus, Edit2, Trash2, X, ExternalLink, FileText } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { AdminDashboard } from './AdminDashboard';
 
 export const ManageResources = () => {
-  const { resources, addResource, updateResource, deleteResource } = useHealth();
-  const [showForm, setShowForm] = useState(false);
-  const [editingId, setEditingId] = useState(null);
-  const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    category: 'mental-health',
-    content: '',
-    author: '',
-  });
+    const [resources, setResources] = useState([]);
+    const [showModal, setShowModal] = useState(false);
+    const [editingResource, setEditingResource] = useState(null);
+    const [loading, setLoading] = useState(true);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-
-    if (editingId) {
-      updateResource(editingId, formData);
-      setEditingId(null);
-    } else {
-      const newResource = {
-        id: Date.now().toString(),
-        title: formData.title || '',
-        description: formData.description || '',
-        category: formData.category || 'mental-health',
-        content: formData.content || '',
-        author: formData.author || '',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      addResource(newResource);
-    }
-
-    setFormData({
-      title: '',
-      description: '',
-      category: 'mental-health',
-      content: '',
-      author: '',
+    const [formData, setFormData] = useState({
+        title: '',
+        author: '',
+        category: 'Health Economics',
+        description: '',
+        content: '',
+        pdfUrl: '',
+        coverImageUrl: ''
     });
-    setShowForm(false);
-  };
 
-  const handleEdit = (resource) => {
-    setFormData(resource);
-    setEditingId(resource.id);
-    setShowForm(true);
-  };
+    useEffect(() => {
+        fetchResources();
+    }, []);
 
-  const handleCancel = () => {
-    setShowForm(false);
-    setEditingId(null);
-    setFormData({
-      title: '',
-      description: '',
-      category: 'mental-health',
-      content: '',
-      author: '',
-    });
-  };
+    const fetchResources = async () => {
+        try {
+            const res = await apiClient.get('/api/admin/resources');
+            setResources(res.data);
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setLoading(false);
+        }
+    };
 
-  return (
-    <div className="min-h-screen bg-gray-50 py-12">
-      <div className="max-w-7xl mx-auto px-4">
-        {/* Header */}
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-800">Manage Resources</h1>
-            <p className="text-gray-400 text-sm mt-1">Add, edit, or remove health and wellness content</p>
-          </div>
-          <button
-            onClick={() => setShowForm(!showForm)}
-            className="flex items-center gap-2 bg-primary-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-primary-700 transition-colors duration-200 shadow-sm"
-          >
-            <Plus size={18} />
-            <span>Add Resource</span>
-          </button>
-        </div>
+    const handleOpenModal = (res = null) => {
+        if (res) {
+            setEditingResource(res);
+            setFormData(res);
+        } else {
+            setEditingResource(null);
+            setFormData({ title: '', author: '', category: 'Health Economics', description: '', content: '', pdfUrl: '', coverImageUrl: '' });
+        }
+        setShowModal(true);
+    };
 
-        {/* Form */}
-        {showForm && (
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-8 mb-8">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-gray-900">
-                {editingId ? 'Edit Resource' : 'Create New Resource'}
-              </h2>
-              <button onClick={handleCancel} className="text-gray-400 hover:text-gray-600">
-                <X size={24} />
-              </button>
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            if (editingResource) {
+                await apiClient.put(`/api/admin/resources/${editingResource.id}`, formData);
+            } else {
+                await apiClient.post('/api/admin/resources', formData);
+            }
+            fetchResources();
+            setShowModal(false);
+            alert('Resource updated successfully');
+        } catch (err) {
+            alert('Failed to save');
+        }
+    };
+
+    const handleDelete = async (id) => {
+        if (!window.confirm('Are you sure you want to delete this resource?')) return;
+        try {
+            await apiClient.delete(`/api/admin/resources/${id}`);
+            fetchResources();
+        } catch (err) {
+            alert('Delete failed');
+        }
+    };
+
+    return (
+        <AdminDashboard>
+            <div className="flex justify-between items-center mb-10">
+                <h2 className="text-3xl font-black text-slate-900">Manage Resources</h2>
+                <button 
+                  onClick={() => handleOpenModal()} 
+                  className="bg-emerald-600 text-white px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-emerald-100 hover:bg-emerald-500 transition-all flex items-center gap-2"
+                >
+                    <Plus size={18} /> Add New Resource
+                </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-              <div className="grid md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Title</label>
-                  <input
-                    type="text"
-                    value={formData.title || ''}
-                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                    required
-                  />
-                </div>
+            <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden text-left">
+                <table className="w-full">
+                    <thead className="bg-slate-50 border-b border-slate-100">
+                        <tr>
+                            <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-400">#</th>
+                            <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-400">Cover</th>
+                            <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-400">Title</th>
+                            <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-400">Author</th>
+                            <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-400">Category</th>
+                            <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-400 text-center">PDF</th>
+                            <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-400 text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-50">
+                        {resources.map((res, i) => (
+                            <tr key={res.id} className="hover:bg-slate-50/50 transition-colors">
+                                <td className="px-6 py-4 text-xs font-bold text-slate-400">{i + 1}</td>
+                                <td className="px-6 py-4">
+                                    <img src={res.coverImageUrl} className="w-[50px] h-[50px] object-cover rounded-md border border-slate-100" />
+                                </td>
+                                <td className="px-6 py-4 font-bold text-slate-900 text-sm">{res.title}</td>
+                                <td className="px-6 py-4 text-xs font-medium text-slate-500">{res.author}</td>
+                                <td className="px-6 py-4">
+                                    <span className="px-2 py-0.5 bg-blue-50 text-blue-600 rounded-md text-[9px] font-black uppercase border border-blue-100">
+                                        {res.category}
+                                    </span>
+                                </td>
+                                <td className="px-6 py-4 text-center">
+                                    <a href={res.pdfUrl} target="_blank" className="text-slate-300 hover:text-blue-500 transition-all">
+                                        <ExternalLink size={18} />
+                                    </a>
+                                </td>
+                                <td className="px-6 py-4 text-right">
+                                    <div className="flex justify-end gap-2">
+                                        <button onClick={() => handleOpenModal(res)} className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-slate-100 rounded-xl transition-all"><Edit2 size={16} /></button>
+                                        <button onClick={() => handleDelete(res.id)} className="p-2 text-slate-400 hover:text-rose-600 hover:bg-slate-100 rounded-xl transition-all"><Trash2 size={16} /></button>
+                                    </div>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
 
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Author</label>
-                  <input
-                    type="text"
-                    value={formData.author || ''}
-                    onChange={(e) => setFormData({ ...formData, author: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Category</label>
-                <select
-                  value={formData.category || 'mental-health'}
-                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                >
-                  <option value="mental-health">Mental Health</option>
-                  <option value="fitness">Fitness</option>
-                  <option value="nutrition">Nutrition</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Description</label>
-                <input
-                  type="text"
-                  value={formData.description || ''}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Content</label>
-                <textarea
-                  value={formData.content || ''}
-                  onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                  rows={6}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  required
-                />
-              </div>
-
-              <div className="flex gap-4">
-                <button
-                  type="submit"
-                  className="flex-1 bg-primary-600 text-white py-3 rounded-xl font-semibold hover:bg-primary-700 transition-colors duration-200"
-                >
-                  {editingId ? 'Update Resource' : 'Create Resource'}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleCancel}
-                  className="flex-1 bg-gray-100 text-gray-700 py-3 rounded-xl font-semibold hover:bg-gray-200 transition-colors duration-200"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
-        )}
-
-        {/* Resources List */}
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-100">
-                <tr>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Title</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Category</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Author</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Date</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {resources.map((resource) => (
-                  <tr key={resource.id} className="border-t hover:bg-gray-50">
-                    <td className="px-6 py-4 font-semibold text-gray-800">{resource.title}</td>
-                    <td className="px-6 py-4">
-                      <span className={`text-xs font-semibold px-3 py-1 rounded-full ${
-                        resource.category === 'mental-health' ? 'bg-purple-100 text-purple-800' :
-                        resource.category === 'fitness' ? 'bg-green-100 text-green-800' :
-                        'bg-orange-100 text-orange-800'
-                      }`}>
-                        {resource.category.replace('-', ' ')}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-gray-700">{resource.author}</td>
-                    <td className="px-6 py-4 text-gray-700">{new Date(resource.createdAt).toLocaleDateString()}</td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <button
-                          onClick={() => handleEdit(resource)}
-                          className="text-primary-600 hover:text-primary-800 transition-colors duration-200"
-                        >
-                          <Edit2 size={18} />
-                        </button>
-                        <button
-                          onClick={() => deleteResource(resource.id)}
-                          className="text-red-600 hover:text-red-800 transition-colors duration-200"
-                        >
-                          <Trash2 size={18} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+            <AnimatePresence>
+                {showModal && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/40 backdrop-blur-sm">
+                        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-white w-full max-w-2xl rounded-[2.5rem] shadow-2xl p-8 overflow-y-auto max-h-[90vh]">
+                            <div className="flex justify-between items-center mb-8">
+                                <h3 className="text-2xl font-black text-slate-900">{editingResource ? 'Edit Resource' : 'Add New Resource'}</h3>
+                                <button onClick={() => setShowModal(false)} className="p-2 bg-slate-50 text-slate-400 rounded-xl"><X size={20} /></button>
+                            </div>
+                            <form onSubmit={handleSubmit} className="space-y-4 text-left">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <Input label="Title" value={formData.title} onChange={v => setFormData({...formData, title: v})} required />
+                                    <Input label="Author" value={formData.author} onChange={v => setFormData({...formData, author: v})} required />
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-[10px] font-black uppercase text-slate-400">Category</label>
+                                    <select 
+                                      value={formData.category} 
+                                      onChange={e => setFormData({...formData, category: e.target.value})}
+                                      className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl font-bold text-xs"
+                                    >
+                                        {['Health Economics', 'Nutrition', 'Psychology', 'Fitness', 'Sleep', 'Mental Health'].map(c => <option key={c}>{c}</option>)}
+                                    </select>
+                                </div>
+                                <Input label="PDF URL" value={formData.pdfUrl} onChange={v => setFormData({...formData, pdfUrl: v})} />
+                                <Input label="Cover Image URL" value={formData.coverImageUrl} onChange={v => setFormData({...formData, coverImageUrl: v})} />
+                                <Textarea label="Short Description" value={formData.description} onChange={v => setFormData({...formData, description: v})} />
+                                <Textarea label="Content" value={formData.content} onChange={v => setFormData({...formData, content: v})} />
+                                <button className="w-full py-4 bg-slate-900 text-white font-black text-xs uppercase tracking-widest rounded-2xl shadow-xl hover:bg-emerald-600 transition-all">
+                                    {editingResource ? 'Update Changes' : 'Create Resource'}
+                                </button>
+                            </form>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+        </AdminDashboard>
+    );
 };
+
+const Input = ({ label, value, onChange, ...rest }) => (
+    <div className="space-y-1">
+        <label className="text-[10px] font-black uppercase text-slate-400">{label}</label>
+        <input 
+          type="text" 
+          value={value} 
+          onChange={e => onChange(e.target.value)} 
+          className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl font-bold text-xs focus:ring-4 focus:ring-indigo-500/5 outline-none"
+          {...rest}
+        />
+    </div>
+);
+
+const Textarea = ({ label, value, onChange }) => (
+    <div className="space-y-1">
+        <label className="text-[10px] font-black uppercase text-slate-400">{label}</label>
+        <textarea 
+          value={value} 
+          onChange={e => onChange(e.target.value)} 
+          className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl font-medium text-xs min-h-[80px]"
+        />
+    </div>
+);

@@ -25,8 +25,30 @@ export const LoginPage = () => {
         return;
       }
 
-      await login(email, password);
-      navigate('/dashboard');
+      const data = await login(email, password);
+      console.log("LOGIN RESPONSE:", data);
+      
+      if (!data.token || !data.role) {
+        throw new Error("Invalid response from server (missing token/role)");
+      }
+
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("role", data.role);
+      localStorage.setItem("userName", data.name || data.email);
+      
+      console.log("STORED TOKEN:", localStorage.getItem("token"));
+      console.log("STORED ROLE:", localStorage.getItem("role"));
+      
+      // Automatic redirect based on role (Step 3/7)
+      setTimeout(() => {
+        if (data.role === "ADMIN" || data.role === "ROLE_ADMIN") {
+          console.log("✅ Admin redirecting to /admin/dashboard");
+          navigate("/admin/dashboard");
+        } else {
+          console.log("✅ User redirecting to /dashboard");
+          navigate("/dashboard");
+        }
+      }, 100);
     } catch (err) {
       setError(err.response?.data?.message || 'Invalid credentials.');
     } finally {
@@ -78,7 +100,7 @@ export const LoginPage = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 transition-all text-sm font-medium"
-                  placeholder="name@university.edu"
+                  placeholder="admin@healthwell.com"
                 />
               </div>
             </div>
