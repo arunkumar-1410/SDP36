@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import AdminLayout from "./AdminLayout";
 import apiClient from "../api/client";
 import { Plus, Edit2, Trash2, X, ExternalLink } from "lucide-react";
 
@@ -68,7 +67,7 @@ export default function AdminResourcesPage() {
   };
 
   return (
-    <AdminLayout title="Manage Resources">
+    <>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "32px" }}>
         <div>
           <h1 style={{ fontSize: "24px", fontWeight: "900", color: "#1e293b", margin: 0 }}>Library Content</h1>
@@ -185,7 +184,7 @@ export default function AdminResourcesPage() {
           </div>
         </div>
       )}
-    </AdminLayout>
+    </>
   );
 }
 

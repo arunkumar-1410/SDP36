@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import AdminLayout from "./AdminLayout";
 import apiClient from "../api/client";
 import { Users, BookOpen, Target, BookMarked, Activity } from "lucide-react";
 
@@ -47,15 +46,13 @@ export default function AdminDashboard() {
   ];
 
   if (loading) return (
-    <AdminLayout title="System Overview">
-      <div style={{ textAlign: "center", padding: "100px", color: "#64748b", fontWeight: "600" }}>
-        Loading platform analytics...
-      </div>
-    </AdminLayout>
+    <div style={{ textAlign: "center", padding: "100px", color: "#64748b", fontWeight: "600" }}>
+      Loading platform analytics...
+    </div>
   );
 
   return (
-    <AdminLayout title="Admin Dashboard">
+    <>
       {/* Stat Grid */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "24px", marginBottom: "32px" }}>
         {statCards.map((card, idx) => (
@@ -160,7 +157,7 @@ export default function AdminDashboard() {
           </tbody>
         </table>
       </div>
-    </AdminLayout>
+    </>
   );
 }
 

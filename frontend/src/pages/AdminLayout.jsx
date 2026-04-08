@@ -1,8 +1,8 @@
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { LayoutDashboard, BookOpen, Target, Users, LogOut, Bell, User, Activity } from 'lucide-react';
 
-export default function AdminLayout({ children, title }) {
+export default function AdminLayout({ title }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { logout } = useAuth();
@@ -120,7 +120,7 @@ export default function AdminLayout({ children, title }) {
 
         {/* Page Content */}
         <section style={{ padding: '32px', flex: 1 }}>
-          {children}
+          <Outlet />
         </section>
       </main>
     </div>

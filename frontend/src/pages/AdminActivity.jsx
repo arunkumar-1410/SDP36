@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import apiClient from '../api/client';
-import AdminLayout from './AdminLayout';
 import { Download, Search, User, BookOpen, Activity as ActivityIcon } from 'lucide-react';
 
 export default function AdminActivity() {
@@ -54,7 +53,7 @@ export default function AdminActivity() {
     );
 
     return (
-        <AdminLayout title="Activity & Analytics">
+        <>
             <div style={{ marginBottom: "32px" }}>
                 <h1 style={{ fontSize: "24px", fontWeight: "900", color: "#1e293b", margin: 0 }}>Enrollments & Engagement</h1>
                 <p style={{ color: "#64748b", margin: "4px 0 0 0", fontSize: "14px", fontWeight: "500" }}>Detailed tracking of user interaction and course progress</p>
@@ -163,7 +162,7 @@ export default function AdminActivity() {
                     </div>
                 </section>
             </div>
-        </AdminLayout>
+        </>
     );
 }
 

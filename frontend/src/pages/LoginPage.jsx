@@ -43,10 +43,10 @@ export const LoginPage = () => {
       setTimeout(() => {
         if (data.role === "ADMIN" || data.role === "ROLE_ADMIN") {
           console.log("✅ Admin redirecting to /admin/dashboard");
-          navigate("/admin/dashboard");
+          window.location.href = "/admin/dashboard";
         } else {
           console.log("✅ User redirecting to /dashboard");
-          navigate("/dashboard");
+          window.location.href = "/dashboard";
         }
       }, 100);
     } catch (err) {

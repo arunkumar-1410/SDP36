@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { Navbar } from "./components/Navbar";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AnimatePresence } from "framer-motion";
@@ -34,6 +34,7 @@ const ProgramDetail = lazy(() => import("./pages/ProgramDetail").then(m => ({ de
 const ResourcesPage = lazy(() => import("./pages/ResourcesPage").then(m => ({ default: m.ResourcesPage })));
 const UserDashboard = lazy(() => import("./pages/UserDashboard").then(m => ({ default: m.UserDashboard })));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
+const AdminLayout = lazy(() => import("./pages/AdminLayout"));
 const ManageResources = lazy(() => import("./pages/AdminResourcesPage"));
 const ManagePrograms = lazy(() => import("./pages/AdminProgramsPage"));
 const ManageUsers = lazy(() => import("./pages/AdminUsersPage"));
@@ -45,18 +46,24 @@ const LoadingSpinner = () => (
   </div>
 );
 
+const UserLayout = () => {
+  return (
+    <>
+      <Navbar />
+      <Outlet />
+    </>
+  );
+};
+
 function App() {
   const { isAuthenticated } = useAuth();
-  const isAdminPath = window.location.pathname.startsWith('/admin');
-
   return (
     <div className="min-h-screen bg-white">
-      {!isAdminPath && <Navbar />}
-
       <Suspense fallback={<LoadingSpinner />}>
         <AnimatePresence mode="wait">
           <Routes>
-            <Route path="/" element={<HomePage />} />
+            <Route element={<UserLayout />}>
+              <Route path="/" element={<HomePage />} />
             <Route path="/login" element={isAuthenticated ? <Navigate to="/dashboard" /> : <LoginPage />} />
             <Route path="/signup" element={isAuthenticated ? <Navigate to="/dashboard" /> : <SignupPage />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -71,22 +78,18 @@ function App() {
               </ProtectedRoute>
             } />
 
-            {/* Admin Routes with AdminRoute Guard (Step 3) */}
-            <Route path="/admin/dashboard" element={
-              <AdminRoute><AdminDashboard /></AdminRoute>
-            } />
-            <Route path="/admin/resources" element={
-              <AdminRoute><ManageResources /></AdminRoute>
-            } />
-            <Route path="/admin/programs" element={
-              <AdminRoute><ManagePrograms /></AdminRoute>
-            } />
-            <Route path="/admin/users" element={
-              <AdminRoute><ManageUsers /></AdminRoute>
-            } />
-            <Route path="/admin/activity" element={
-              <AdminRoute><AdminActivityPage /></AdminRoute>
-            } />
+            </Route>
+
+            {/* Admin Routes with AdminRoute Guard (Nested for Step 1) */}
+            <Route path="/admin" element={
+              <AdminRoute><AdminLayout /></AdminRoute>
+            }>
+              <Route path="dashboard" element={<AdminDashboard />} />
+              <Route path="resources" element={<ManageResources />} />
+              <Route path="programs" element={<ManagePrograms />} />
+              <Route path="users" element={<ManageUsers />} />
+              <Route path="activity" element={<AdminActivityPage />} />
+            </Route>
 
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
